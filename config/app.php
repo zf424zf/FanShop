@@ -125,6 +125,7 @@ return [
 
     'log_level' => env('APP_LOG_LEVEL', 'debug'),
 
+    'faker_locale' => 'zh_CN',
     /*
     |--------------------------------------------------------------------------
     | Autoloaded Service Providers
