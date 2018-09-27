@@ -11,7 +11,9 @@
 |
 */
 
-Route::get('/', 'PagesController@root')->name('root');
+Route::redirect('/', '/products')->name('root');
+Route::get('products', 'ProductsController@index')->name('products.index');
+
 Auth::routes();
 Route::group(['middleware' => 'auth'], function () {
     Route::get('/email_verification/send', 'EmailVerificationController@send')->name('email_verification.send');
