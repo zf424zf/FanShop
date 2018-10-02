@@ -126,6 +126,8 @@ return [
     'log_level' => env('APP_LOG_LEVEL', 'debug'),
 
     'faker_locale' => 'zh_CN',
+    // 订单多久后自动关闭 单位：秒
+    'order_ttl' => 900,
     /*
     |--------------------------------------------------------------------------
     | Autoloaded Service Providers
