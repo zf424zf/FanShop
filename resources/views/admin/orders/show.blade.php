@@ -49,35 +49,40 @@
             <!-- 订单发货开始 -->
             <!-- 如果订单未发货，展示发货表单 -->
             @if($order->ship_status === \App\Models\Order::SHIP_STATUS_PENDING)
-                <tr>
-                    <td colspan="4">
-                        <form action="{{ route('admin.orders.ship', [$order->id]) }}" method="post" class="form-inline">
-                            <!-- 别忘了 csrf token 字段 -->
-                            <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                            <div class="form-group {{ $errors->has('express_company') ? 'has-error' : '' }}">
-                                <label for="express_company" class="control-label">物流公司</label>
-                                <input type="text" id="express_company" name="express_company" value="" class="form-control" placeholder="输入物流公司">
-                                @if($errors->has('express_company'))
-                                    @foreach($errors->get('express_company') as $msg)
-                                        <span class="help-block">{{ $msg }}</span>
-                                    @endforeach
-                                @endif
-                            </div>
-                            <div class="form-group {{ $errors->has('express_no') ? 'has-error' : '' }}">
-                                <label for="express_no" class="control-label">物流单号</label>
-                                <input type="text" id="express_no" name="express_no" value="" class="form-control" placeholder="输入物流单号">
-                                @if($errors->has('express_no'))
-                                    @foreach($errors->get('express_no') as $msg)
-                                        <span class="help-block">{{ $msg }}</span>
-                                    @endforeach
-                                @endif
-                            </div>
-                            <div class="form-group" style="vertical-align: top">
-                                <button type="submit" class="btn btn-success" id="ship-btn">发货</button>
-                            </div>
-                        </form>
-                    </td>
-                </tr>
+                @if($order->refund_status !== \App\Models\Order::REFUND_STATUS_SUCCESS)
+                    <tr>
+                        <td colspan="4">
+                            <form action="{{ route('admin.orders.ship', [$order->id]) }}" method="post"
+                                  class="form-inline">
+                                <!-- 别忘了 csrf token 字段 -->
+                                <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                                <div class="form-group {{ $errors->has('express_company') ? 'has-error' : '' }}">
+                                    <label for="express_company" class="control-label">物流公司</label>
+                                    <input type="text" id="express_company" name="express_company" value=""
+                                           class="form-control" placeholder="输入物流公司">
+                                    @if($errors->has('express_company'))
+                                        @foreach($errors->get('express_company') as $msg)
+                                            <span class="help-block">{{ $msg }}</span>
+                                        @endforeach
+                                    @endif
+                                </div>
+                                <div class="form-group {{ $errors->has('express_no') ? 'has-error' : '' }}">
+                                    <label for="express_no" class="control-label">物流单号</label>
+                                    <input type="text" id="express_no" name="express_no" value="" class="form-control"
+                                           placeholder="输入物流单号">
+                                    @if($errors->has('express_no'))
+                                        @foreach($errors->get('express_no') as $msg)
+                                            <span class="help-block">{{ $msg }}</span>
+                                        @endforeach
+                                    @endif
+                                </div>
+                                <div class="form-group" style="vertical-align: top">
+                                    <button type="submit" class="btn btn-success" id="ship-btn">发货</button>
+                                </div>
+                            </form>
+                        </td>
+                    </tr>
+                @endif
             @else
                 <!-- 否则展示物流公司和物流单号 -->
                 <tr>
@@ -88,7 +93,103 @@
                 </tr>
             @endif
             <!-- 订单发货结束 -->
+            @if($order->refund_status !== \App\Models\Order::REFUND_STATUS_PENDING)
+                <tr>
+                    <td>退款状态：</td>
+                    <td colspan="2">{{ \App\Models\Order::$refundStatusMap[$order->refund_status] }}
+                        ，理由：{{ $order->extra['refund_reason'] }}</td>
+                    <td>
+                        <!-- 如果订单退款状态是已申请，则展示处理按钮 -->
+                        @if($order->refund_status === \App\Models\Order::REFUND_STATUS_APPLIED)
+                            <button class="btn btn-sm btn-success" id="btn-refund-agree">同意</button>
+                            <button class="btn btn-sm btn-danger" id="btn-refund-disagree">不同意</button>
+                        @endif
+                    </td>
+                </tr>
+            @endif
             </tbody>
         </table>
     </div>
 </div>
+<script>
+    $(document).ready(function () {
+        // 不同意 按钮的点击事件
+        $('#btn-refund-disagree').click(function () {
+            // 注意：Laravel-Admin 的 swal 是 v1 版本，参数和 v2 版本的不太一样
+            swal({
+                title: '输入拒绝退款理由',
+                type: 'input',
+                showCancelButton: true,
+                closeOnConfirm: false,
+                confirmButtonText: "确认",
+                cancelButtonText: "取消",
+            }, function (inputValue) {
+                // 用户点击了取消，inputValue 为 false
+                // === 是为了区分用户点击取消还是没有输入
+                if (inputValue === false) {
+                    return;
+                }
+                if (!inputValue) {
+                    swal('理由不能为空', '', 'error')
+                    return;
+                }
+                // Laravel-Admin 没有 axios，使用 jQuery 的 ajax 方法来请求
+                $.ajax({
+                    url: '{{ route('admin.orders.handle_refund', [$order->id]) }}',
+                    type: 'POST',
+                    data: JSON.stringify({   // 将请求变成 JSON 字符串
+                        agree: false,  // 拒绝申请
+                        reason: inputValue,
+                        // 带上 CSRF Token
+                        // Laravel-Admin 页面里可以通过 LA.token 获得 CSRF Token
+                        _token: LA.token,
+                    }),
+                    contentType: 'application/json',  // 请求的数据格式为 JSON
+                    success: function (data) {  // 返回成功时会调用这个函数
+                        swal({
+                            title: '操作成功',
+                            type: 'success'
+                        }, function () {
+                            // 用户点击 swal 上的 按钮时刷新页面
+                            location.reload();
+                        });
+                    }
+                });
+            });
+        });
+
+        // 同意按钮的点击事件
+        $('#btn-refund-agree').click(function () {
+            swal({
+                title: '确认要将款项退还给用户？',
+                type: 'warning',
+                showCancelButton: true,
+                closeOnConfirm: false,
+                confirmButtonText: "确认",
+                cancelButtonText: "取消",
+            }, function (ret) {
+                // 用户点击取消，不做任何操作
+                if (!ret) {
+                    return;
+                }
+                $.ajax({
+                    url: '{{ route('admin.orders.handle_refund', [$order->id]) }}',
+                    type: 'POST',
+                    data: JSON.stringify({
+                        agree: true, // 代表同意退款
+                        _token: LA.token,
+                    }),
+                    contentType: 'application/json',
+                    success: function (data) {
+                        swal({
+                            title: '操作成功',
+                            type: 'success'
+                        }, function () {
+                            location.reload();
+                        });
+                    }
+                });
+            });
+        });
+    });
+</script>
