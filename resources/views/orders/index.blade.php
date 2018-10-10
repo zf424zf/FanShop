@@ -31,13 +31,15 @@
                                                 <tr>
                                                     <td class="product-info">
                                                         <div class="preview">
-                                                            <a target="_blank" href="{{ route('products.show', [$item->product_id]) }}">
+                                                            <a target="_blank"
+                                                               href="{{ route('products.show', [$item->product_id]) }}">
                                                                 <img src="{{ $item->product->image_url }}">
                                                             </a>
                                                         </div>
                                                         <div>
                     <span class="product-title">
-                       <a target="_blank" href="{{ route('products.show', [$item->product_id]) }}">{{ $item->product->title }}</a>
+                       <a target="_blank"
+                          href="{{ route('products.show', [$item->product_id]) }}">{{ $item->product->title }}</a>
                      </span>
                                                             <span class="sku-title">{{ $item->productSku->title }}</span>
                                                         </div>
@@ -45,7 +47,9 @@
                                                     <td class="sku-price text-center">￥{{ $item->price }}</td>
                                                     <td class="sku-amount text-center">{{ $item->amount }}</td>
                                                     @if($index === 0)
-                                                        <td rowspan="{{ count($order->items) }}" class="text-center total-amount">￥{{ $order->total_amount }}</td>
+                                                        <td rowspan="{{ count($order->items) }}"
+                                                            class="text-center total-amount">
+                                                            ￥{{ $order->total_amount }}</td>
                                                         <td rowspan="{{ count($order->items) }}" class="text-center">
                                                             @if($order->paid_at)
                                                                 @if($order->refund_status === \App\Models\Order::REFUND_STATUS_PENDING)
@@ -57,12 +61,22 @@
                                                                 已关闭
                                                             @else
                                                                 未支付<br>
-                                                                请于 {{ $order->created_at->addSeconds(config('app.order_ttl'))->format('H:i') }} 前完成支付<br>
+                                                                请于 {{ $order->created_at->addSeconds(config('app.order_ttl'))->format('H:i') }}
+                                                                前完成支付<br>
                                                                 否则订单将自动关闭
                                                             @endif
                                                         </td>
                                                         <td rowspan="{{ count($order->items) }}" class="text-center">
-                                                            <a class="btn btn-primary btn-xs" href="{{ route('orders.show', ['order' => $order->id]) }}">查看订单</a>
+                                                            <a class="btn btn-primary btn-xs"
+                                                               href="{{ route('orders.show', ['order' => $order->id]) }}">查看订单</a>
+                                                            <!-- 评价入口开始 -->
+                                                            @if($order->paid_at)
+                                                                <a class="btn btn-success btn-xs"
+                                                                   href="{{ route('orders.review.show', ['order' => $order->id]) }}">
+                                                                    {{ $order->reviewed ? '查看评价' : '评价' }}
+                                                                </a>
+                                                        @endif
+                                                        <!-- 评价入口结束 -->
                                                         </td>
                                                     @endif
                                                 </tr>
