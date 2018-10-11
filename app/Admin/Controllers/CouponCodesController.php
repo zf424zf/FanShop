@@ -48,15 +48,14 @@ class CouponCodesController extends Controller
      * Edit interface.
      *
      * @param mixed   $id
-     * @param Content $content
      * @return Content
      */
-    public function edit($id, Content $content)
+    public function edit($id)
     {
-        return $content
-            ->header('Edit')
-            ->description('description')
-            ->body($this->form()->edit($id));
+        return Admin::content(function (Content $content) use ($id) {
+            $content->header('编辑优惠券');
+            $content->body($this->form()->edit($id));
+        });
     }
 
     /**
@@ -133,7 +132,14 @@ class CouponCodesController extends Controller
         return Admin::form(CouponCode::class, function (Form $form) {
             $form->display('id', 'ID');
             $form->text('name', '名称')->rules('required');
-            $form->text('code', '优惠码')->rules('nullable|unique:coupon_codes');
+            $form->text('code', '优惠码')->rules(function($form) {
+                // 如果 $form->model()->id 不为空，代表是编辑操作
+                if ($id = $form->model()->id) {
+                    return 'nullable|unique:coupon_codes,code,'.$id.',id';
+                } else {
+                    return 'nullable|unique:coupon_codes';
+                }
+            });
             $form->radio('type', '类型')->options(CouponCode::$typeMap)->rules('required');
             $form->text('value', '折扣')->rules(function ($form) {
                 if ($form->type === CouponCode::TYPE_PERCENT) {
