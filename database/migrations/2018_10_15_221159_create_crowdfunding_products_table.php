@@ -21,7 +21,7 @@ class CreateCrowdfundingProductsTable extends Migration
             $table->decimal('total_amount', 10, 2)->default(0);
             $table->unsignedInteger('user_count')->default(0);
             $table->dateTime('end_at');
-            $table->string('status');
+            $table->string('status')->default(\App\Models\CrowdfundingProduct::STATUS_FUNDING);
         });
     }
 
