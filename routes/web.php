@@ -56,6 +56,7 @@ Route::group(['middleware' => 'auth'], function () {
         // coupon
         Route::get('coupon_codes/{code}', 'CouponCodesController@show')->name('coupon_codes.show');
 
+        Route::post('crowdfunding_orders', 'OrdersController@crowdfunding')->name('crowdfunding_orders.store');
 
     });
 });

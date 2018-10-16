@@ -4,31 +4,14 @@ namespace App\Admin\Controllers;
 
 use App\Models\Category;
 use App\Models\Product;
-use App\Http\Controllers\Controller;
-use Encore\Admin\Controllers\HasResourceActions;
 use Encore\Admin\Facades\Admin;
 use Encore\Admin\Form;
 use Encore\Admin\Grid;
 use Encore\Admin\Layout\Content;
 use Encore\Admin\Show;
 
-class ProductsController extends Controller
+class ProductsController extends CommonProductsController
 {
-    use HasResourceActions;
-
-    /**
-     * Index interface.
-     *
-     * @param Content $content
-     * @return Content
-     */
-    public function index(Content $content)
-    {
-        return Admin::content(function (Content $content) {
-            $content->header('商品列表');
-            $content->body($this->grid());
-        });
-    }
 
     /**
      * Show interface.
@@ -45,34 +28,6 @@ class ProductsController extends Controller
             ->body($this->detail($id));
     }
 
-    /**
-     * Edit interface.
-     *
-     * @param mixed   $id
-     * @param Content $content
-     * @return Content
-     */
-    public function edit($id, Content $content)
-    {
-        return Admin::content(function (Content $content) use ($id) {
-            $content->header('编辑商品');
-            $content->body($this->form()->edit($id));
-        });
-    }
-
-    /**
-     * Create interface.
-     *
-     * @param Content $content
-     * @return Content
-     */
-    public function create(Content $content)
-    {
-        return Admin::content(function (Content $content) {
-            $content->header('创建商品');
-            $content->body($this->form());
-        });
-    }
 
     /**
      * Make a grid builder.
@@ -82,6 +37,7 @@ class ProductsController extends Controller
     protected function grid()
     {
         return Admin::grid(Product::class, function (Grid $grid) {
+            $grid->model()->where('type', Product::TYPE_NORMAL)->with(['category']);
             // 使用 with 来预加载商品类目数据，减少 SQL 查询
             $grid->model()->with(['category']);
             $grid->id('ID')->sortable();
@@ -142,7 +98,7 @@ class ProductsController extends Controller
     {
         // 创建一个表单
         return Admin::form(Product::class, function (Form $form) {
-
+            $form->hidden('type')->value(Product::TYPE_NORMAL);
             // 创建一个输入框，第一个参数 title 是模型的字段名，第二个参数是该字段描述
             $form->text('title', '商品名称')->rules('required');
             // 添加一个类目字段，与之前类目管理类似，使用 Ajax 的方式来搜索添加
@@ -174,5 +130,30 @@ class ProductsController extends Controller
                 $form->model()->price = collect($form->input('skus'))->where(Form::REMOVE_FLAG_NAME, 0)->min('price') ?: 0;
             });
         });
+    }
+
+    public function getProductType()
+    {
+        return Product::TYPE_NORMAL;
+    }
+
+    protected function customGrid(Grid $grid)
+    {
+        $grid->model()->with(['category']);
+        $grid->id('ID')->sortable();
+        $grid->title('商品名称');
+        $grid->column('category.name', '类目');
+        $grid->on_sale('已上架')->display(function ($value) {
+            return $value ? '是' : '否';
+        });
+        $grid->price('价格');
+        $grid->rating('评分');
+        $grid->sold_count('销量');
+        $grid->review_count('评论数');
+    }
+
+    protected function customForm(Form $form)
+    {
+        // 普通商品没有额外的字段，因此这里不需要写任何代码
     }
 }
