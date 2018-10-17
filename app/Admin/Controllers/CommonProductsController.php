@@ -69,6 +69,7 @@ abstract class CommonProductsController extends Controller
         // 在表单页面中添加一个名为 type 的隐藏字段，值为当前商品类型
         $form->hidden('type')->value($this->getProductType());
         $form->text('title', '商品名称')->rules('required');
+        $form->text('long_title', '商品长标题')->rules('required');
         $form->select('category_id', '类目')->options(function ($id) {
             $category = Category::find($id);
             if ($category) {
@@ -88,6 +89,12 @@ abstract class CommonProductsController extends Controller
             $form->text('price', '单价')->rules('required|numeric|min:0.01');
             $form->text('stock', '剩余库存')->rules('required|integer|min:0');
         });
+
+        $form->hasMany('properties', '商品属性', function (Form\NestedForm $form) {
+            $form->text('name', '属性名')->rules('required');
+            $form->text('value', '属性值')->rules('required');
+        });
+
         $form->saving(function (Form $form) {
             $form->model()->price = collect($form->input('skus'))->where(Form::REMOVE_FLAG_NAME, 0)->min('price') ?: 0;
         });
