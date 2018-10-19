@@ -72,3 +72,7 @@ Route::post('payment/alipay/notify', 'PaymentController@alipayNotify')->name('pa
 Route::get('products/{product}', 'ProductsController@show')->name('products.show');
 // 支付宝分期支付回调
 Route::post('installments/alipay/notify', 'InstallmentsController@alipayNotify')->name('installments.alipay.notify');
+Route::get('test_es',function (){
+//    var_dump(explode(',', env('ES_HOSTS')));
+   var_dump(app('es')->info());
+});
